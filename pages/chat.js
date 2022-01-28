@@ -1,20 +1,52 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
 import React from "react";
 import appConfig from "../config.json";
+import {createClient} from '@supabase/supabase-js'
+
+const supabase_anon_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzM5MDY4MiwiZXhwIjoxOTU4OTY2NjgyfQ._hC3ojuQmXRnK7AmF1jFfTAj-waLN7wTr-ZKhv0R8x8';
+const supabase_url = 'https://ankeeiaunvlusbxszsye.supabase.co';
+
+const supabaseClient = createClient(supabase_url, supabase_anon_key);
+
+
+  
 
 export default function ChatPage() {
   
   const [mensagem, setMensagem] = React.useState("");
   const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
+  React.useEffect( () => { 
+    supabaseClient
+      .from('mensagens')
+      .select('*')
+      .order('id', {ascending: false})
+      .then( ({data}) => {
+        setListaDeMensagens(data)
+      });
+  }, []);
+
+
+
   function handleNovaMensagem(novaMensagem) {
     const mensagem = {
-      id: listaDeMensagens.length + 1,
       de: "brianrecoba",
       texto: novaMensagem,
     };
 
-    setListaDeMensagens([mensagem, ...listaDeMensagens]);
+    supabaseClient
+    .from('mensagens')
+    .insert([
+      mensagem
+    ]).then( (data) => {
+      console.log('Criando mensagem: ',dataS)
+      setListaDeMensagens([
+        data[0],
+        ...listaDeMensagens
+      ]);
+    });
+
+    
     setMensagem("");
   }
 
@@ -154,17 +186,20 @@ function MessageList(props) {
             <Box
               styleSheet={{
                 marginBottom: "8px",
+                display: "flex",
+                alignItems: "center",
+
               }}
             >
               <Image
                 styleSheet={{
-                  width: "20px",
-                  height: "20px",
+                  width: "25px",
+                  height: "25px",
                   borderRadius: "50%",
                   display: "inline-block",
                   marginRight: "8px",
                 }}
-                src={`https://github.com/brianrecoba.png`}
+                src={`https://github.com/${mensagem.de}.png`}
               />
               <Text tag="strong">{mensagem.de}</Text>
               <Text
