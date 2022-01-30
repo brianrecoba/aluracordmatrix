@@ -1,55 +1,82 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
+import { useRouter } from "next/router";
 import React from "react";
 import appConfig from "../config.json";
-import {createClient} from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
+import { ButtonSendSticker } from "../src/components/ButtonSendSticker";
 
-const supabase_anon_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzM5MDY4MiwiZXhwIjoxOTU4OTY2NjgyfQ._hC3ojuQmXRnK7AmF1jFfTAj-waLN7wTr-ZKhv0R8x8';
-const supabase_url = 'https://ankeeiaunvlusbxszsye.supabase.co';
+// Como fazer AJAX: https://medium.com/@omariosouto/entendendo-como-fazer-ajax-com-a-fetchapi-977ff20da3c6
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzM5MDY4MiwiZXhwIjoxOTU4OTY2NjgyfQ._hC3ojuQmXRnK7AmF1jFfTAj-waLN7wTr-ZKhv0R8x8";
+const SUPABASE_URL = "https://ankeeiaunvlusbxszsye.supabase.co";
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const supabaseClient = createClient(supabase_url, supabase_anon_key);
-
-
-  
+function escutaMensagemEmTempoReal(adicionaMensagem) {
+  return supabaseClient
+    .from("mensagens")
+    .on("INSERT", (respostaLive) => {
+      console.log("Houve uma nova mensagem.");
+      adicionaMensagem(respostaLive.new);
+    })
+    .subscribe();
+}
 
 export default function ChatPage() {
-  
+  const roteamento = useRouter();
+  const usuarioLogado = roteamento.query.username;
+  // console.log(roteamento.query);
+  // console.log('usuario Logado:', usuarioLogado);
   const [mensagem, setMensagem] = React.useState("");
   const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
-  React.useEffect( () => { 
+  /*
+  // Usuario
+  - Usuario digita no campo de textarea
+  - Aperta enter para enviar
+  - Tem que adicionar o texto na listagem
+  // Dev
+  - [x] Campo criafo
+  - [x] Vamos usar o onChange usa o useState (ter if pra caso seja enter pra limpar a variavel)
+  - [x] Lista de mensagens
+  */
+
+  React.useEffect(() => {
     supabaseClient
-      .from('mensagens')
-      .select('*')
-      .order('id', {ascending: false})
-      .then( ({data}) => {
-        setListaDeMensagens(data)
+      .from("mensagens")
+      .select("*")
+      .order("id", { ascending: false })
+      .then(({ data }) => {
+        // console.log('Dados da consulta:', data);
+        setListaDeMensagens(data);
       });
+
+    escutaMensagemEmTempoReal((novaMensagem) => {
+      console.log("Nova mensagem:", novaMensagem);
+      setListaDeMensagens((valorAtualDaLista) => {
+        return [novaMensagem, ...valorAtualDaLista];
+      });
+    });
   }, []);
-
-
 
   function handleNovaMensagem(novaMensagem) {
     const mensagem = {
-      de: "brianrecoba",
+      // id: listaDeMensagens.length + 1,
+      de: usuarioLogado,
       texto: novaMensagem,
     };
 
     supabaseClient
-    .from('mensagens')
-    .insert([
-      mensagem
-    ]).then( (data) => {
-      console.log('Criando mensagem: ',dataS)
-      setListaDeMensagens([
-        data[0],
-        ...listaDeMensagens
-      ]);
-    });
+      .from("mensagens")
+      .insert([
+        // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+        mensagem,
+      ])
+      .then(({ data }) => {
+        console.log("Criando mensagem: ", data);
+      });
 
-    
     setMensagem("");
   }
-
   return (
     <Box
       styleSheet={{
@@ -57,7 +84,7 @@ export default function ChatPage() {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: appConfig.theme.colors.primary[500],
-        backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
+        backgroundImage: `url(https://img.vixdata.io/pd/jpg-large/pt/sites/default/files/t/terra-roxa-teoria-1217-1400x800.jpg)`,
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundBlendMode: "multiply",
@@ -91,12 +118,19 @@ export default function ChatPage() {
             padding: "16px",
           }}
         >
-          <MessageList mensagens={listaDeMensagens} />
+          <MessageList mensagens={listaDeMensagens}  />
+          {/* {listaDeMensagens.map( (mensagemAtual) => {
+                      return (
+                          <li key={mensagemAtual.id}>
+                              {mensagemAtual.de}: {mensagemAtual.texto}
+                          </li>
+                      )
+                  })} */}
           <Box
             as="form"
             styleSheet={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "center"
             }}
           >
             <TextField
@@ -108,6 +142,7 @@ export default function ChatPage() {
               onKeyPress={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
+
                   handleNovaMensagem(mensagem);
                 }
               }}
@@ -122,6 +157,15 @@ export default function ChatPage() {
                 backgroundColor: appConfig.theme.colors.neutrals[800],
                 marginRight: "12px",
                 color: appConfig.theme.colors.neutrals[200],
+              }}
+            />
+            <ButtonSendSticker
+              onStickerClick={(sticker) => {
+                console.log(
+                  "[Usando o componente] Salva esse sticker no banco.",
+                  sticker
+                );
+                handleNovaMensagem(`:sticker: ${sticker}`);
               }}
             />
           </Box>
@@ -156,7 +200,7 @@ function Header() {
 }
 
 function MessageList(props) {
-  console.log(props);
+  // console.log(props.listaDeMensagens)
   return (
     <Box
       tag="ul"
@@ -186,15 +230,12 @@ function MessageList(props) {
             <Box
               styleSheet={{
                 marginBottom: "8px",
-                display: "flex",
-                alignItems: "center",
-
               }}
             >
               <Image
                 styleSheet={{
-                  width: "25px",
-                  height: "25px",
+                  width: "20px",
+                  height: "20px",
                   borderRadius: "50%",
                   display: "inline-block",
                   marginRight: "8px",
@@ -213,7 +254,12 @@ function MessageList(props) {
                 {new Date().toLocaleDateString()}
               </Text>
             </Box>
-            {mensagem.texto}
+            {mensagem.texto.startsWith(":sticker:") ? (
+              <Image src={mensagem.texto.replace(":sticker:", "")} />
+            ) : (
+              mensagem.texto
+            )}
+            {/* mensagem.texto */}
           </Text>
         );
       })}

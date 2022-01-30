@@ -1,32 +1,27 @@
-import appConfig from "../config.json";
 import { Box, Button, Text, TextField, Image } from "@skynexui/components";
 import React from "react";
-import { useRouter} from 'next/router';
+import { useRouter } from "next/router";
+import appConfig from "../config.json";
 
-
-
-function Titulo(props) {
-  const Tag = props.tag ;
+function Title(props) {
+  const Tag = props.tag || "h1";
   return (
     <>
       <Tag>{props.children}</Tag>
-      <style jsx>
-        {`
-          ${Tag} {
-            color: ${appConfig.theme.colors.neutrals["000"]};
-            font-size: 24px;
-            font-weight: 600;
-          }
-        `}
-      </style>
+      <style jsx>{`
+        ${Tag} {
+          color: ${appConfig.theme.colors.neutrals["000"]};
+          font-size: 24px;
+          font-weight: 600;
+        }
+      `}</style>
     </>
   );
 }
 
-
-export default function PaginaInicial() {
-  
-  const [username, setUsername] = React.useState()
+export default function HomePage() {
+  const [username, setUsername] = React.useState("");
+  //console.log('stateDoReact', stateDoReact);
   const roteamento = useRouter();
 
   return (
@@ -36,9 +31,8 @@ export default function PaginaInicial() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: appConfig.theme.colors.primary[500],
           backgroundImage:
-            "url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)",
+            "url(https://img.wallpapersafari.com/desktop/1440/900/72/91/edPYT1.jpg)",
           backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
           backgroundBlendMode: "multiply",
@@ -65,10 +59,11 @@ export default function PaginaInicial() {
           {/* Formulário */}
           <Box
             as="form"
-            onSubmit = { function (event) {
-              event.preventDefault()
-              roteamento.push('/chat');
-              
+            onSubmit={function (infosDoEvento) {
+              infosDoEvento.preventDefault();
+              console.log("alguém submeteu o form");
+              roteamento.push(`/chat?username=${username}`);
+              //window.location.href = '/chat'
             }}
             styleSheet={{
               display: "flex",
@@ -80,7 +75,7 @@ export default function PaginaInicial() {
               marginBottom: "32px",
             }}
           >
-            <Titulo tag="h2">Boas vindas de volta!</Titulo>
+            <Title tag="h2">Bem vindo de volta!</Title>
             <Text
               variant="body3"
               styleSheet={{
@@ -91,22 +86,40 @@ export default function PaginaInicial() {
               {appConfig.name}
             </Text>
 
-            <TextField
-              fullWidth
-              value = {username}
-              onChange={function(event){
-                const valor = event.target.value;
-                setUsername(valor);
-              }}
-              textFieldColors={{
-                neutral: {
-                  textColor: appConfig.theme.colors.neutrals[200],
-                  mainColor: appConfig.theme.colors.neutrals[900],
-                  mainColorHighlight: appConfig.theme.colors.primary[500],
-                  backgroundColor: appConfig.theme.colors.neutrals[800],
-                },
-              }}
-            />
+            {/* <input 
+                        type="text"
+                        value={username}
+                        onChange={function(event) {
+                            console.log('usuario digitou', event.target.value);
+                            //onde ta o valor?
+                            const valor = event.target.value;
+                            //trocar o valor da variavel atraves do react
+                            setUsername(valor);
+                        }}                    
+                        
+                        /> */}
+            {
+              <TextField 
+                autocomplete = 'off'
+                value={username}
+                onChange={function (event) {
+                  console.log("usuario digitou", event.target.value);
+                  //onde ta o valor?
+                  const valor = event.target.value;
+                  //trocar o valor da variavel atraves do react
+                  setUsername(valor);
+                }}
+                fullWidth
+                textFieldColors={{
+                  neutral: {
+                    textColor: appConfig.theme.colors.neutrals[200],
+                    mainColor: appConfig.theme.colors.neutrals[900],
+                    mainColorHighlight: appConfig.theme.colors.primary[500],
+                    backgroundColor: appConfig.theme.colors.neutrals[800],
+                  },
+                }}
+              />
+            }
             <Button
               type="submit"
               label="Entrar"
